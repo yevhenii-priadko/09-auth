@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react' // Повертаємо useEffect
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useDebouncedCallback } from 'use-debounce'
@@ -9,7 +9,7 @@ import NoteList from '@/components/NoteList/NoteList'
 import Pagination from '@/components/Pagination/Pagination'
 import SearchBox from '@/components/SearchBox/SearchBox'
 import css from '../../notes.module.css'
-import { fetchNotes } from '@/lib/api'
+import { fetchNotes } from '@/lib/api/clientApi'
 
 interface NotesClientProps {
   tag?: string // Значення тега (currentTag), передане з серверного компонента
@@ -23,7 +23,6 @@ export default function NotesClient({ tag }: NotesClientProps) {
 
   // ВИКОНУЄМО ВИМОГУ МЕНТОРА: ОБРОБЛЯЄМО ВСЕРЕДИНІ ХУКА useEffect
   useEffect(() => {
-    // Загортаємо в мікротаску, щоб лінтер не сварився на синхронний setState в ефекті
     Promise.resolve().then(() => {
       setPage(1)
       setSearch('')
@@ -31,11 +30,16 @@ export default function NotesClient({ tag }: NotesClientProps) {
     })
   }, [tag]) // Хук чітко слідкує за зміною пропа tag
 
-  // Хук React Query: використовує проп tag прямо у queryKey та queryFn
+  // Хук React Query: захищаємо від нескінченного спаму в терміналі через параметри безпеки
   const { data, isLoading, isError } = useQuery({
     queryKey: ['notes', search, page, tag],
     queryFn: () => fetchNotes(search, page, tag),
     placeholderData: keepPreviousData,
+
+    // 🔥 НАДВАЖЛИВІ НАЛАШТУВАННЯ ДЛЯ ЗУПИНКИ СПАМУ:
+    retry: false, // Вимикає нескінченні спроби запиту, якщо користувач неавторизований (401)
+    staleTime: 1000 * 60 * 5, // Дані вважаються свіжими 5 хвилин, React Query не смикає сервер щомиті
+    refetchOnWindowFocus: false, // Забороняє робити повторний GET, коли ви просто клікаєте по екрану чи VS Code
   })
 
   const debouncedSearch = useDebouncedCallback((text: string) => {
@@ -60,7 +64,8 @@ export default function NotesClient({ tag }: NotesClientProps) {
           <Pagination pageCount={totalPages} currentPage={page} onPageChange={p => setPage(p)} />
         )}
 
-        <Link href='/notes/action/create' className={css.button}>
+        {/* Додали prefetch={false} строго за правилами оптимізації та ТЗ */}
+        <Link href='/notes/action/create' prefetch={false} className={css.button}>
           Create note +
         </Link>
       </header>

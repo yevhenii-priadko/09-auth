@@ -2,8 +2,18 @@ import type { NoteTag } from '@/types/note'
 import css from './Sidebar.module.css' // Перевірте, чи імпортуються стилі без помилок
 import Link from 'next/link'
 
-const AVAILABLE_TAGS: NoteTag[] = ['Todo', 'Work', 'Personal', 'Meeting', 'Shopping']
-
+const AVAILABLE_TAGS: NoteTag[] = [
+  'Work',
+  'Personal',
+  'Meeting',
+  'Shopping',
+  'Ideas',
+  'Travel',
+  'Finance',
+  'Health',
+  'Important',
+  'Todo',
+]
 interface SidebarNotesProps {
   params: Promise<{ slug?: string[] }>
 }

@@ -4,6 +4,7 @@ import './globals.css'
 import TanStackProvider from '@/components/TanStackProvider/TanStackProvider'
 import Header from '@/components/Header/Header'
 import Footer from '@/components/Footer/Footer'
+import AuthProvider from '@/components/AuthProvider/AuthProvider'
 
 const roboto = Roboto({
   weight: ['400', '500', '700'],
@@ -42,13 +43,15 @@ export default function RootLayout({
     <html lang='en' className={roboto.variable}>
       <body className={roboto.className}>
         <TanStackProvider>
-          <Header />
-          <main> {children}</main>
+          <AuthProvider>
+            <Header />
+            <main> {children}</main>
 
-          {/* Рендеримо модалку всередині провайдера під головним контентом */}
-          {modal}
+            {/* Рендеримо модалку всередині провайдера під головним контентом */}
+            {modal}
 
-          <Footer />
+            <Footer />
+          </AuthProvider>
         </TanStackProvider>
       </body>
     </html>
