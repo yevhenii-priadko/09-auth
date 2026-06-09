@@ -54,7 +54,7 @@ export const updateMe = async (data: Partial<User>): Promise<User> => {
 
 // Функції роботи з нотатками (CSR) — ТИПІЗАЦІЯ БЕЗ ANY
 
-export const fetchNoteById = async (id: string) => {
+export const fetchNoteById = async (id: string): Promise<Note> => {
   const res = await api.get(`/notes/${id}`) // б'є на локальний проксі
   return res.data
 }
@@ -68,7 +68,7 @@ export const createNote = async (data: {
   return res.data
 }
 
-export const deleteNote = async (id: string) => {
+export const deleteNote = async (id: string): Promise<Note> => {
   const res = await api.delete(`/notes/${id}`) // б'є на локальний проксі
   return res.data
 }

@@ -14,19 +14,14 @@ export async function proxy(request: NextRequest) {
   const accessToken = cookieStore.get('accessToken')?.value
   const refreshToken = cookieStore.get('refreshToken')?.value
 
-  // Якщо користувач ВЖЕ залогінений (має діючий accessToken) і намагається зайти на /sign-in чи /sign-up
+  // 1. Захист публічних маршрутів від залогінених користувачів (Вимога ментора №1)
   if (accessToken && AUTH_ROUTES.includes(pathname)) {
-    // Жорстко перенаправляємо його на головну сторінку за ТЗ
     return NextResponse.redirect(new URL('/', request.url))
-  }
-
-  // Службові запити Next.js та API пропускаємо без перевірок приватних зон
-  if (pathname.startsWith('/_next') || pathname.startsWith('/api')) {
-    return NextResponse.next()
   }
 
   const isPrivateRoute = PRIVATE_ROUTES.some(route => pathname.startsWith(route))
 
+  // 2. Перевірка приватної зони (/profile або /notes)
   if (isPrivateRoute) {
     if (!accessToken) {
       // Якщо accessToken немає, але є refreshToken — пробуємо тиху автентифікацію
@@ -37,23 +32,24 @@ export async function proxy(request: NextRequest) {
 
           if (setCookie) {
             const cookieArray = Array.isArray(setCookie) ? setCookie : [setCookie]
+
             for (const cookieStr of cookieArray) {
               const parsed = parse(cookieStr)
-              const options = {
-                expires: parsed.Expires ? new Date(parsed.Expires) : undefined,
-                path: parsed.Path,
-                maxAge: Number(parsed['Max-Age']),
+
+              // ІСПРАВЛЕНО: Прибрали зламаний парсинг атрибутів expires/maxAge.
+              // Встановлюємо куки через правильний API Next.js, передаючи тільки чисті значення токенів
+              if (parsed.accessToken) {
+                cookieStore.set('accessToken', parsed.accessToken, { path: '/' })
               }
-              if (parsed.accessToken) cookieStore.set('accessToken', parsed.accessToken, options)
-              if (parsed.refreshToken) cookieStore.set('refreshToken', parsed.refreshToken, options)
+              if (parsed.refreshToken) {
+                cookieStore.set('refreshToken', parsed.refreshToken, { path: '/' })
+              }
             }
 
-            // Успішно оновили токени — пропускаємо в приватну зону
-            return NextResponse.next({
-              headers: { Cookie: cookieStore.toString() },
-            })
+            // ІСПРАВЛЕНО: Прибрали ручне встановлення headers: { Cookie: ... }.
+            // Просто повертаємо NextResponse.next() — Next.js сам збереже куки у відповіді!
+            return NextResponse.next()
           }
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (error) {
           // Якщо рефреш-токен застарів або впав — видаляємо куки й кидаємо на логін
           cookieStore.delete('accessToken')
@@ -67,7 +63,6 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  // Для всіх інших публічних сторінок — просто даємо зелене світло
   return NextResponse.next()
 }
 
