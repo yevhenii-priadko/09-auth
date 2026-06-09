@@ -3,11 +3,17 @@
 import { api } from './api'
 import { User } from '@/types/user'
 import { NoteTag, Note } from '@/types/note' // Імпортуємо інтерфейс Note та NoteTag для повної типізації
-import axios from 'axios'
 
 // Інтерфейс відповіді для авторизації
 export interface AuthResponse {
   user: User
+}
+
+export const fetchNotes = async (search = '', page = 1, tag?: string): Promise<NotesResponse> => {
+  const res = await api.get<NotesResponse>('/notes', {
+    params: { search, page, perPage: 12, tag },
+  })
+  return res.data
 }
 
 // Інтерфейс відповіді для списку нотаток, щоб існували .notes та .totalPages
@@ -31,14 +37,9 @@ export const logout = async (): Promise<void> => {
 }
 
 export const checkSession = async (): Promise<AuthResponse> => {
-  // Убираем дженерик <AuthResponse> из самого вызова .get,
-  // чтобы TypeScript не ругался на withCredentials в настройках
-  const res = await axios.get('https://goit.study', {
-    withCredentials: true,
-  })
-
-  // Принудительно приводим возвращаемые данные к нужному типу AuthResponse
-  return res.data as AuthResponse
+  // Повертаємо використання спільного екземпляру api та правильний ендпоінт
+  const res = await api.get<AuthResponse>('/auth/session')
+  return res.data
 }
 
 export const getMe = async (): Promise<User> => {
@@ -52,12 +53,6 @@ export const updateMe = async (data: Partial<User>): Promise<User> => {
 }
 
 // Функції роботи з нотатками (CSR) — ТИПІЗАЦІЯ БЕЗ ANY
-export const fetchNotes = async (search = '', page = 1, tag?: string): Promise<NotesResponse> => {
-  const res = await api.get<NotesResponse>('/notes', {
-    params: { search, page, perPage: 12, tag },
-  })
-  return res.data
-}
 
 export const fetchNoteById = async (id: string) => {
   const res = await api.get(`/notes/${id}`) // б'є на локальний проксі

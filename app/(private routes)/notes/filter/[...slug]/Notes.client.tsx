@@ -73,7 +73,7 @@ export default function NotesClient({ tag }: NotesClientProps) {
       {isLoading && <div className={css.loading}>Loading notes...</div>}
       {isError && <div className={css.error}>Something went wrong!</div>}
 
-      {!isLoading && !isError && <NoteList notes={notes} />}
+      {!isLoading && !isError && notes.length > 0 && <NoteList notes={notes} />}
     </div>
   )
 }

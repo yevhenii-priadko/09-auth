@@ -1,37 +1,56 @@
-'use client'
-
+import { Metadata } from 'next'
 import Link from 'next/link'
 import Image from 'next/image'
-import { useAuthStore } from '@/lib/store/authStore'
-import css from './ProfilePage.module.css'
+import { getMeServer } from '@/lib/api/serverApi'
+import css from './Profile.module.css'
 
-export default function ProfilePage() {
-  const { user } = useAuthStore()
+export const metadata: Metadata = {
+  title: 'User Profile | NoteHub',
+  description: 'View your profile information on NoteHub',
+}
 
-  if (!user) return null
+// 2. СТОРІНКА Є СЕРВЕРНОЮ (НЕМАЄ 'use client' вгорі)
+export default async function ProfilePage() {
+  // 3. Завантажуємо дані користувача НА СЕРВЕРІ через менторську функцію
+  const user = await getMeServer()
+
+  if (!user) {
+    return <p>Loading profile data...</p>
+  }
 
   return (
     <main className={css.mainContent}>
       <div className={css.profileCard}>
-        <div className={css.header}>
-          <h1 className={css.formTitle}>Profile Page</h1>
-          <Link href='/profile/edit' className={css.editProfileButton}>
-            Edit Profile
-          </Link>
-        </div>
+        <h1 className={css.title}>My Profile</h1>
+
+        {/* Аватар користувача через next/image */}
         <div className={css.avatarWrapper}>
           <Image
-            src={user.avatar || '/default-avatar.png'}
-            alt='User Avatar'
+            src={user.avatar || 'https://goit.global'}
+            alt={`${user.username || 'User'}'s avatar`}
             width={120}
             height={120}
             className={css.avatar}
             priority
           />
         </div>
-        <div className={css.profileInfo}>
-          <p>Username: {user.username || 'Not set'}</p>
-          <p>Email: {user.email}</p>
+
+        {/* Відображення імені та email */}
+        <div className={css.infoGroup}>
+          <p className={css.label}>Username:</p>
+          <p className={css.value}>{user.username}</p>
+        </div>
+
+        <div className={css.infoGroup}>
+          <p className={css.label}>Email:</p>
+          <p className={css.value}>{user.email}</p>
+        </div>
+
+        {/* Посилання на редагування */}
+        <div className={css.actions}>
+          <Link href='/profile/edit' className={css.editLink}>
+            Edit Profile
+          </Link>
         </div>
       </div>
     </main>
